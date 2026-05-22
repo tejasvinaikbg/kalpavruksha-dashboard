@@ -1,44 +1,71 @@
 import cors from "cors";
 import express from "express";
 import { createYoga } from "graphql-yoga";
+
 import { connectDatabase } from "./config/database.js";
 import { env } from "./config/env.js";
 import { readUserFromRequest } from "./graphql/context.js";
 import { schema } from "./graphql/schema.js";
 
-const app = express();
+const bootstrap = async () => {
+  const app = express();
 
-app.use(
-  cors({
-    origin: env.webOrigin,
-    credentials: true
-  })
-);
+  app.use(express.json());
 
-app.get("/health", (_request, response) => {
-  response.json({ status: "ok" });
-});
+  app.use(
+    cors({
+      origin: [
+        "http://localhost:3000",
+        env.webOrigin
+      ],
+      credentials: true
+    })
+  );
 
-const yoga = createYoga({
-  schema,
-  graphqlEndpoint: "/graphql",
-  context: ({ request }) => ({
-    user: readUserFromRequest(request)
-  })
-});
+  // ROOT ROUTE
+  app.get("/", (_req, res) => {
+    res.json({
+      message: "API running"
+    });
+  });
 
-app.use("/graphql", yoga);
+  // HEALTH ROUTE
+  app.get("/health", (_req, res) => {
+    res.json({
+      status: "ok"
+    });
+  });
 
-const startServer = async () => {
+  // GRAPHQL
+  const yoga = createYoga({
+    schema,
+
+    graphqlEndpoint: "/graphql",
+
+    context: async ({ request }) => ({
+      user: await readUserFromRequest(request)
+    })
+  });
+
+  // IMPORTANT
+  app.use(yoga);
+
+  // DATABASE
   await connectDatabase();
 
-  const PORT = process.env.PORT || env.port || 4000;
+  // IMPORTANT FOR RAILWAY
+  const PORT = Number(
+    process.env.PORT || env.port || 4000
+  );
 
-  app.listen(PORT, () => {
-    console.log(
-      `API running on port ${PORT}`
-    );
+  // IMPORTANT
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`API running on port ${PORT}`);
   });
 };
 
-startServer();
+bootstrap().catch((error) => {
+  console.error("BOOTSTRAP ERROR:", error);
+
+  process.exit(1);
+});
