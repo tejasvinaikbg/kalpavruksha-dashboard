@@ -22,14 +22,14 @@ const bootstrap = async () => {
     })
   );
 
-  // ROOT ROUTE
+  // ROOT
   app.get("/", (_req, res) => {
     res.json({
       message: "API running"
     });
   });
 
-  // HEALTH ROUTE
+  // HEALTH
   app.get("/health", (_req, res) => {
     res.json({
       status: "ok"
@@ -42,30 +42,29 @@ const bootstrap = async () => {
 
     graphqlEndpoint: "/graphql",
 
+    landingPage: false,
+
     context: async ({ request }) => ({
       user: await readUserFromRequest(request)
     })
   });
 
   // IMPORTANT
-  app.use(yoga);
+  app.use("/graphql", yoga);
 
-  // DATABASE
   await connectDatabase();
 
-  // IMPORTANT FOR RAILWAY
   const PORT = Number(
     process.env.PORT || env.port || 4000
   );
 
-  // IMPORTANT
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`API running on port ${PORT}`);
   });
 };
 
 bootstrap().catch((error) => {
-  console.error("BOOTSTRAP ERROR:", error);
+  console.error(error);
 
   process.exit(1);
 });
