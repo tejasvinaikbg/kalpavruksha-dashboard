@@ -29,8 +29,16 @@ const yoga = createYoga({
 
 app.use("/graphql", yoga);
 
-await connectDatabase();
+const startServer = async () => {
+  await connectDatabase();
 
-app.listen(env.port, () => {
-  console.log(`API running at http://localhost:${env.port}/graphql`);
-});
+  const PORT = process.env.PORT || env.port || 4000;
+
+  app.listen(PORT, () => {
+    console.log(
+      `API running on port ${PORT}`
+    );
+  });
+};
+
+startServer();
